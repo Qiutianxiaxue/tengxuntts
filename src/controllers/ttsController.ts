@@ -1,0 +1,167 @@
+import { Request, Response } from 'express';
+import { TTSService } from '../services/ttsService';
+import { TTSRequest, TTSResponse } from '../types';
+
+export class TTSController {
+  private ttsService: TTSService;
+
+  constructor() {
+    this.ttsService = new TTSService();
+  }
+
+  // 文本转语音接口
+  async textToSpeech(req: Request, res: Response): Promise<void> {
+    try {
+      const { text, voiceType, sampleRate, codec }: TTSRequest = req.body;
+
+      if (!text || typeof text !== 'string' || text.trim() === '') {
+        res.status(400).json({
+          success: false,
+          error: '文本内容不能为空'
+        } as TTSResponse);
+        return;
+      }
+
+      if (text.length > 2000) {
+        res.status(400).json({
+          success: false,
+          error: '文本长度不能超过2000个字符'
+        } as TTSResponse);
+        return;
+      }
+
+      const result = await this.ttsService.textToSpeech(
+        text.trim(),
+        voiceType,
+        sampleRate,
+        codec
+      );
+
+      res.json({
+        success: true,
+        data: {
+          audioBase64: result.audioData,
+          cached: result.cached
+        }
+      } as TTSResponse);
+
+    } catch (error) {
+      console.error('TTS转换失败:', error);
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : '服务器内部错误'
+      } as TTSResponse);
+    }
+  }
+
+  // GET方式的简单接口
+  async textToSpeechGet(req: Request, res: Response): Promise<void> {
+    try {
+      const text = req.query.text as string;
+      const voiceType = req.query.voiceType ? parseInt(req.query.voiceType as string) : undefined;
+      const sampleRate = req.query.sampleRate ? parseInt(req.query.sampleRate as string) : undefined;
+      const codec = req.query.codec as string;
+
+      if (!text || typeof text !== 'string' || text.trim() === '') {
+        res.status(400).json({
+          success: false,
+          error: '文本内容不能为空'
+        } as TTSResponse);
+        return;
+      }
+
+      if (text.length > 2000) {
+        res.status(400).json({
+          success: false,
+          error: '文本长度不能超过2000个字符'
+        } as TTSResponse);
+        return;
+      }
+
+      const result = await this.ttsService.textToSpeech(
+        text.trim(),
+        voiceType,
+        sampleRate,
+        codec
+      );
+
+      res.json({
+        success: true,
+        data: {
+          audioBase64: result.audioData,
+          cached: result.cached
+        }
+      } as TTSResponse);
+
+    } catch (error) {
+      console.error('TTS转换失败:', error);
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : '服务器内部错误'
+      } as TTSResponse);
+    }
+  }
+
+  // 获取支持的音色列表
+  async getVoices(req: Request, res: Response): Promise<void> {
+    try {
+      const voices = this.ttsService.getSupportedVoices();
+      res.json({
+        success: true,
+        data: voices
+      });
+    } catch (error) {
+      console.error('获取音色列表失败:', error);
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : '服务器内部错误'
+      });
+    }
+  }
+
+  // 获取缓存信息
+  async getCacheInfo(req: Request, res: Response): Promise<void> {
+    try {
+      const cacheInfo = await this.ttsService.getCacheInfo();
+      res.json({
+        success: true,
+        data: cacheInfo
+      });
+    } catch (error) {
+      console.error('获取缓存信息失败:', error);
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : '服务器内部错误'
+      });
+    }
+  }
+
+  // 清理缓存
+  async clearCache(req: Request, res: Response): Promise<void> {
+    try {
+      await this.ttsService.clearCache();
+      res.json({
+        success: true,
+        data: { message: '缓存清理完成' }
+      });
+    } catch (error) {
+      console.error('清理缓存失败:', error);
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : '服务器内部错误'
+      });
+    }
+  }
+
+  // 健康检查
+  async health(req: Request, res: Response): Promise<void> {
+    res.json({
+      success: true,
+      data: {
+        status: 'healthy',
+        timestamp: new Date().toISOString(),
+        version: '1.0.0'
+      }
+    });
+  }
+}
