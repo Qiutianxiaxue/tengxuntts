@@ -22,19 +22,21 @@ export class TTSService {
     text: string,
     voiceType: number = config.tts.defaultVoiceType,
     sampleRate: number = config.tts.defaultSampleRate,
-    codec: string = config.tts.defaultCodec
-  ): Promise<{ audioData: string; cached: boolean }> {
+    codec: string = config.tts.defaultCodec,
+    EmotionCategory?: string
+  ): Promise<{ audioData: string; voiceType: number; sampleRate: number; codec: string; EmotionCategory: string; cached: boolean }> {
     try {
+      const EmotionCategoryText = EmotionCategory || "neutral";
       // 首先检查缓存
       const cachedAudio = await this.cacheManager.get(
         text,
         voiceType,
         sampleRate,
-        codec
+        codec + EmotionCategoryText
       );
       if (cachedAudio) {
         console.log("使用缓存音频");
-        return { audioData: cachedAudio, cached: true };
+        return { audioData: cachedAudio, voiceType, sampleRate, codec, EmotionCategory: EmotionCategoryText, cached: true };
       }
 
       // 如果没有缓存，则调用腾讯云TTS
@@ -45,6 +47,7 @@ export class TTSService {
         VoiceType: voiceType,
         SampleRate: sampleRate,
         Codec: codec,
+        EmotionCategory: EmotionCategoryText,
       };
 
       const response = await this.client.TextToVoice(params);
@@ -65,7 +68,7 @@ export class TTSService {
       );
 
       console.log("TTS转换完成并已缓存");
-      return { audioData, cached: false };
+      return { audioData, voiceType, sampleRate, codec, EmotionCategory: EmotionCategoryText, cached: false };
     } catch (error) {
       console.error("TTS服务错误:", error);
       throw error;

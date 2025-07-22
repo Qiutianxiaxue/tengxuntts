@@ -98,7 +98,8 @@ export class TTSController {
         text.trim(),
         voiceType,
         sampleRate,
-        codec
+        codec,
+        'neutral'
       );
 
       // 将Base64转换为二进制数据
@@ -111,8 +112,9 @@ export class TTSController {
         'Content-Length': audioBuffer.length.toString(),
         'Content-Disposition': `inline; filename="tts_audio.${codec}"`,
         'Cache-Control': 'public, max-age=3600', // 缓存1小时
-        'X-Voice-Type': voiceType,
-        'X-Sample-Rate': sampleRate,
+        'X-Voice-Type': result.voiceType,
+        'X-Sample-Rate': result.sampleRate,
+        'X-EmotionCategory': result.EmotionCategory,
         'X-Cached': result.cached, // 标识是否来自缓存
       });
 
