@@ -6,13 +6,13 @@ export interface TTSRequest {
 }
 
 export interface TTSResponse {
-  success: boolean;
+  code: number;
   data?: {
     audioUrl?: string;
     audioBase64?: string;
     cached: boolean;
   };
-  error?: string;
+  message?: string;
 }
 
 export interface CacheItem {

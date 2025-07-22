@@ -100,7 +100,7 @@ npm run watch
 响应：
 ```json
 {
-  "success": true,
+  "code": 1,
   "data": {
     "audioBase64": "base64编码的音频数据",
     "cached": false

@@ -17,7 +17,7 @@ export const config = {
     enabled: process.env.CACHE_ENABLED === 'true'
   },
   tts: {
-    defaultVoiceType: parseInt(process.env.DEFAULT_VOICE_TYPE || '0'),
+    defaultVoiceType: parseInt(process.env.DEFAULT_VOICE_TYPE || '301030'),
     defaultSampleRate: parseInt(process.env.DEFAULT_SAMPLE_RATE || '16000'),
     defaultCodec: process.env.DEFAULT_CODEC || 'wav'
   }

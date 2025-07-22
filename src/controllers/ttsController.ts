@@ -1,6 +1,6 @@
-import { Request, Response } from 'express';
-import { TTSService } from '../services/ttsService';
-import { TTSRequest, TTSResponse } from '../types';
+import { Request, Response } from "express";
+import { TTSService } from "../services/ttsService";
+import { TTSRequest, TTSResponse } from "../types";
 
 export class TTSController {
   private ttsService: TTSService;
@@ -14,18 +14,29 @@ export class TTSController {
     try {
       const { text, voiceType, sampleRate, codec }: TTSRequest = req.body;
 
-      if (!text || typeof text !== 'string' || text.trim() === '') {
+      if (!text || typeof text !== "string" || text.trim() === "") {
         res.status(400).json({
-          success: false,
-          error: '文本内容不能为空'
+          code: 0,
+          message: "文本内容不能为空",
+        } as TTSResponse);
+        return;
+      }
+      const supportedVoices = this.ttsService.getSupportedVoices();
+      if (
+        voiceType !== undefined &&
+        !supportedVoices.some((voice) => voice.id === voiceType)
+      ) {
+        res.status(400).json({
+          code: 0,
+          message: "无效的音色类型",
         } as TTSResponse);
         return;
       }
 
-      if (text.length > 2000) {
+      if (text.length > 150) {
         res.status(400).json({
-          success: false,
-          error: '文本长度不能超过2000个字符'
+          code: 0,
+          message: "文本长度不能超过150个字符",
         } as TTSResponse);
         return;
       }
@@ -38,18 +49,17 @@ export class TTSController {
       );
 
       res.json({
-        success: true,
+        code: 1,
         data: {
           audioBase64: result.audioData,
-          cached: result.cached
-        }
+          cached: result.cached,
+        },
       } as TTSResponse);
-
     } catch (error) {
-      console.error('TTS转换失败:', error);
+      console.error("TTS转换失败:", error);
       res.status(500).json({
-        success: false,
-        error: error instanceof Error ? error.message : '服务器内部错误'
+        code: 0,
+        message: error instanceof Error ? error.message : "服务器内部错误",
       } as TTSResponse);
     }
   }
@@ -58,22 +68,26 @@ export class TTSController {
   async textToSpeechGet(req: Request, res: Response): Promise<void> {
     try {
       const text = req.query.text as string;
-      const voiceType = req.query.voiceType ? parseInt(req.query.voiceType as string) : undefined;
-      const sampleRate = req.query.sampleRate ? parseInt(req.query.sampleRate as string) : undefined;
+      const voiceType = req.query.voiceType
+        ? parseInt(req.query.voiceType as string)
+        : undefined;
+      const sampleRate = req.query.sampleRate
+        ? parseInt(req.query.sampleRate as string)
+        : undefined;
       const codec = req.query.codec as string;
 
-      if (!text || typeof text !== 'string' || text.trim() === '') {
+      if (!text || typeof text !== "string" || text.trim() === "") {
         res.status(400).json({
-          success: false,
-          error: '文本内容不能为空'
+          code: 0,
+          message: "文本内容不能为空",
         } as TTSResponse);
         return;
       }
 
-      if (text.length > 2000) {
+      if (text.length > 150) {
         res.status(400).json({
-          success: false,
-          error: '文本长度不能超过2000个字符'
+          code: 0,
+          message: "文本长度不能超过150个字符",
         } as TTSResponse);
         return;
       }
@@ -86,18 +100,17 @@ export class TTSController {
       );
 
       res.json({
-        success: true,
+        code: 1,
         data: {
           audioBase64: result.audioData,
-          cached: result.cached
-        }
+          cached: result.cached,
+        },
       } as TTSResponse);
-
     } catch (error) {
-      console.error('TTS转换失败:', error);
+      console.error("TTS转换失败:", error);
       res.status(500).json({
-        success: false,
-        error: error instanceof Error ? error.message : '服务器内部错误'
+        code: 0,
+        message: error instanceof Error ? error.message : "服务器内部错误",
       } as TTSResponse);
     }
   }
@@ -108,13 +121,13 @@ export class TTSController {
       const voices = this.ttsService.getSupportedVoices();
       res.json({
         success: true,
-        data: voices
+        data: voices,
       });
     } catch (error) {
-      console.error('获取音色列表失败:', error);
+      console.error("获取音色列表失败:", error);
       res.status(500).json({
         success: false,
-        error: error instanceof Error ? error.message : '服务器内部错误'
+        error: error instanceof Error ? error.message : "服务器内部错误",
       });
     }
   }
@@ -125,13 +138,13 @@ export class TTSController {
       const cacheInfo = await this.ttsService.getCacheInfo();
       res.json({
         success: true,
-        data: cacheInfo
+        data: cacheInfo,
       });
     } catch (error) {
-      console.error('获取缓存信息失败:', error);
+      console.error("获取缓存信息失败:", error);
       res.status(500).json({
         success: false,
-        error: error instanceof Error ? error.message : '服务器内部错误'
+        error: error instanceof Error ? error.message : "服务器内部错误",
       });
     }
   }
@@ -142,13 +155,13 @@ export class TTSController {
       await this.ttsService.clearCache();
       res.json({
         success: true,
-        data: { message: '缓存清理完成' }
+        data: { message: "缓存清理完成" },
       });
     } catch (error) {
-      console.error('清理缓存失败:', error);
+      console.error("清理缓存失败:", error);
       res.status(500).json({
         success: false,
-        error: error instanceof Error ? error.message : '服务器内部错误'
+        error: error instanceof Error ? error.message : "服务器内部错误",
       });
     }
   }
@@ -158,10 +171,10 @@ export class TTSController {
     res.json({
       success: true,
       data: {
-        status: 'healthy',
+        status: "healthy",
         timestamp: new Date().toISOString(),
-        version: '1.0.0'
-      }
+        version: "1.0.0",
+      },
     });
   }
 }

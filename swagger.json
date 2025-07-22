@@ -1,0 +1,620 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "腾讯云TTS服务API",
+    "description": "基于腾讯云的文本转语音(TTS)服务API，支持本地缓存功能。提供多种音色选择，支持中英文文本转换为语音。",
+    "version": "1.0.0",
+    "contact": {
+      "name": "API Support"
+    },
+    "license": {
+      "name": "MIT",
+      "url": "https://opensource.org/licenses/MIT"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "本地开发服务器"
+    }
+  ],
+  "tags": [
+    {
+      "name": "TTS",
+      "description": "文本转语音相关接口"
+    },
+    {
+      "name": "Cache",
+      "description": "缓存管理相关接口"
+    },
+    {
+      "name": "System",
+      "description": "系统信息相关接口"
+    }
+  ],
+  "paths": {
+    "/": {
+      "get": {
+        "summary": "获取API信息",
+        "description": "获取API基本信息和接口列表",
+        "tags": ["System"],
+        "responses": {
+          "200": {
+            "description": "成功返回API信息",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "example": "腾讯云TTS服务API"
+                    },
+                    "version": {
+                      "type": "string",
+                      "example": "1.0.0"
+                    },
+                    "description": {
+                      "type": "string",
+                      "example": "提供文本转语音服务，支持本地缓存"
+                    },
+                    "endpoints": {
+                      "type": "object"
+                    },
+                    "usage": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tts": {
+      "post": {
+        "summary": "文本转语音 (POST方式)",
+        "description": "将文本转换为语音，支持多种音色和参数配置。相同参数的文本会自动使用缓存。",
+        "tags": ["TTS"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TTSRequest"
+              },
+              "examples": {
+                "basic": {
+                  "summary": "基础示例",
+                  "value": {
+                    "text": "你好，欢迎使用腾讯云TTS服务！",
+                    "voiceType": 301030,
+                    "sampleRate": 16000,
+                    "codec": "wav"
+                  }
+                },
+                "english": {
+                  "summary": "英文示例",
+                  "value": {
+                    "text": "Hello, welcome to use Tencent Cloud TTS service!",
+                    "voiceType": 1050,
+                    "sampleRate": 16000,
+                    "codec": "wav"
+                  }
+                },
+                "minimal": {
+                  "summary": "最简示例（仅文本）",
+                  "value": {
+                    "text": "这是一个最简单的测试"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "转换成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TTSResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "成功响应",
+                    "value": {
+                      "success": true,
+                      "data": {
+                        "audioBase64": "UklGRnoGAABXQVZFZm10IBAAAAABAAEA...",
+                        "cached": false
+                      }
+                    }
+                  },
+                  "cached": {
+                    "summary": "缓存命中",
+                    "value": {
+                      "success": true,
+                      "data": {
+                        "audioBase64": "UklGRnoGAABXQVZFZm10IBAAAAABAAEA...",
+                        "cached": true
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求参数错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "empty_text": {
+                    "summary": "文本为空",
+                    "value": {
+                      "success": false,
+                      "error": "文本内容不能为空"
+                    }
+                  },
+                  "text_too_long": {
+                    "summary": "文本过长",
+                    "value": {
+                      "success": false,
+                      "error": "文本长度不能超过2000个字符"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "服务器内部错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "success": false,
+                  "error": "TTS服务返回空音频数据"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "文本转语音 (GET方式)",
+        "description": "通过GET方式进行文本转语音，适用于简单的调用场景",
+        "tags": ["TTS"],
+        "parameters": [
+          {
+            "name": "text",
+            "in": "query",
+            "required": true,
+            "description": "要转换的文本内容",
+            "schema": {
+              "type": "string",
+              "maxLength": 2000
+            },
+            "example": "你好世界"
+          },
+          {
+            "name": "voiceType",
+            "in": "query",
+            "required": false,
+            "description": "音色ID，默认为0",
+            "schema": {
+              "type": "integer",
+              "default": 0
+            },
+            "example": 301030
+          },
+          {
+            "name": "sampleRate",
+            "in": "query",
+            "required": false,
+            "description": "采样率，默认为16000",
+            "schema": {
+              "type": "integer",
+              "enum": [8000, 16000, 22050, 24000],
+              "default": 16000
+            },
+            "example": 16000
+          },
+          {
+            "name": "codec",
+            "in": "query",
+            "required": false,
+            "description": "编码格式，默认为wav",
+            "schema": {
+              "type": "string",
+              "enum": ["wav", "mp3", "pcm"],
+              "default": "wav"
+            },
+            "example": "wav"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "转换成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TTSResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求参数错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "服务器内部错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/voices": {
+      "get": {
+        "summary": "获取支持的音色列表",
+        "description": "获取所有支持的音色信息，包括音色ID、名称、性别、语言等",
+        "tags": ["TTS"],
+        "responses": {
+          "200": {
+            "description": "成功获取音色列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Voice"
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "data": [
+                    {
+                      "id": 301030,
+                      "name": "爱小溪",
+                      "gender": "女",
+                      "language": "中文",
+                      "remarks": "标准女生"
+                    },
+                    {
+                      "id": 101040,
+                      "name": "智川",
+                      "gender": "女",
+                      "language": "中文",
+                      "remarks": "四川女声"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "服务器内部错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/cache/info": {
+      "get": {
+        "summary": "获取缓存信息",
+        "description": "获取当前缓存的统计信息，包括缓存文件数量和占用空间大小",
+        "tags": ["Cache"],
+        "responses": {
+          "200": {
+            "description": "成功获取缓存信息",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/CacheInfo"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "data": {
+                    "count": 15,
+                    "size": "8.5 MB"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "服务器内部错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/cache": {
+      "delete": {
+        "summary": "清理缓存",
+        "description": "清理所有音频缓存文件",
+        "tags": ["Cache"],
+        "responses": {
+          "200": {
+            "description": "缓存清理成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "message": {
+                          "type": "string",
+                          "example": "缓存清理完成"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "服务器内部错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/health": {
+      "get": {
+        "summary": "健康检查",
+        "description": "检查服务运行状态",
+        "tags": ["System"],
+        "responses": {
+          "200": {
+            "description": "服务运行正常",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "status": {
+                          "type": "string",
+                          "example": "healthy"
+                        },
+                        "timestamp": {
+                          "type": "string",
+                          "format": "date-time",
+                          "example": "2024-01-01T00:00:00.000Z"
+                        },
+                        "version": {
+                          "type": "string",
+                          "example": "1.0.0"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "TTSRequest": {
+        "type": "object",
+        "required": ["text"],
+        "properties": {
+          "text": {
+            "type": "string",
+            "description": "要转换的文本内容",
+            "maxLength": 2000,
+            "minLength": 1,
+            "example": "你好，欢迎使用腾讯云TTS服务！"
+          },
+          "voiceType": {
+            "type": "integer",
+            "description": "音色ID，不同的音色有不同的声音特色",
+            "default": 0,
+            "example": 301030
+          },
+          "sampleRate": {
+            "type": "integer",
+            "description": "音频采样率，影响音质",
+            "enum": [8000, 16000, 22050, 24000],
+            "default": 16000,
+            "example": 16000
+          },
+          "codec": {
+            "type": "string",
+            "description": "音频编码格式",
+            "enum": ["wav", "mp3", "pcm"],
+            "default": "wav",
+            "example": "wav"
+          }
+        }
+      },
+      "TTSResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "请求是否成功",
+            "example": true
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "audioBase64": {
+                "type": "string",
+                "description": "Base64编码的音频数据",
+                "example": "UklGRnoGAABXQVZFZm10IBAAAAABAAEA..."
+              },
+              "audioUrl": {
+                "type": "string",
+                "description": "音频文件URL（如果支持）",
+                "example": "http://example.com/audio/xxx.wav"
+              },
+              "cached": {
+                "type": "boolean",
+                "description": "是否来自缓存",
+                "example": false
+              }
+            }
+          },
+          "error": {
+            "type": "string",
+            "description": "错误信息（仅在success为false时存在）"
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": false
+          },
+          "error": {
+            "type": "string",
+            "description": "错误描述信息",
+            "example": "文本内容不能为空"
+          }
+        }
+      },
+      "Voice": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "音色ID",
+            "example": 301030
+          },
+          "name": {
+            "type": "string",
+            "description": "音色名称",
+            "example": "爱小溪"
+          },
+          "gender": {
+            "type": "string",
+            "description": "性别",
+            "enum": ["男", "女"],
+            "example": "女"
+          },
+          "language": {
+            "type": "string",
+            "description": "语言",
+            "example": "中文"
+          },
+          "remarks": {
+            "type": "string",
+            "description": "备注说明",
+            "example": "标准女生"
+          }
+        }
+      },
+      "CacheInfo": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "integer",
+            "description": "缓存文件数量",
+            "example": 15
+          },
+          "size": {
+            "type": "string",
+            "description": "缓存占用空间大小",
+            "example": "8.5 MB"
+          }
+        }
+      }
+    },
+    "examples": {
+      "BasicTTSRequest": {
+        "summary": "基础文本转语音请求",
+        "description": "使用默认参数进行文本转语音",
+        "value": {
+          "text": "你好，这是一个测试文本"
+        }
+      },
+      "AdvancedTTSRequest": {
+        "summary": "高级文本转语音请求",
+        "description": "指定音色、采样率和编码格式",
+        "value": {
+          "text": "欢迎使用腾讯云TTS服务，这里是高质量的语音合成",
+          "voiceType": 301030,
+          "sampleRate": 24000,
+          "codec": "wav"
+        }
+      }
+    }
+  }
+}
