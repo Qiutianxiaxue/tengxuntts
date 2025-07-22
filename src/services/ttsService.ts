@@ -95,6 +95,13 @@ export class TTSService {
         remarks: "标准女生",
       },
       {
+        id: 301023,
+        name: "爱小燕",
+        gender: "女",
+        language: "中文",
+        remarks: "标准女生",
+      },
+      {
         id: 101040,
         name: "智川",
         gender: "女",
