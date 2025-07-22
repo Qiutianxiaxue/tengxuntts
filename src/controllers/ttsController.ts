@@ -64,7 +64,7 @@ export class TTSController {
     }
   }
 
-  // GET方式的简单接口
+  // GET方式的简单接口 - 直接返回音频二进制数据
   async textToSpeechGet(req: Request, res: Response): Promise<void> {
     try {
       const text = req.query.text as string;
@@ -74,13 +74,13 @@ export class TTSController {
       const sampleRate = req.query.sampleRate
         ? parseInt(req.query.sampleRate as string)
         : undefined;
-      const codec = req.query.codec as string;
+      const codec = req.query.codec as string || 'wav';
 
       if (!text || typeof text !== "string" || text.trim() === "") {
         res.status(400).json({
           code: 0,
           message: "文本内容不能为空",
-        } as TTSResponse);
+        });
         return;
       }
 
@@ -88,7 +88,7 @@ export class TTSController {
         res.status(400).json({
           code: 0,
           message: "文本长度不能超过150个字符",
-        } as TTSResponse);
+        });
         return;
       }
 
@@ -99,20 +99,39 @@ export class TTSController {
         codec
       );
 
-      res.json({
-        code: 1,
-        data: {
-          audioBase64: result.audioData,
-          cached: result.cached,
-        },
-      } as TTSResponse);
+      // 将Base64转换为二进制数据
+      const audioBuffer = Buffer.from(result.audioData, 'base64');
+      
+      // 设置响应头
+      const mimeType = this.getMimeType(codec);
+      res.set({
+        'Content-Type': mimeType,
+        'Content-Length': audioBuffer.length.toString(),
+        'Content-Disposition': `inline; filename="tts_audio.${codec}"`,
+        'Cache-Control': 'public, max-age=3600', // 缓存1小时
+        'X-Cached': result.cached ? 'true' : 'false', // 标识是否来自缓存
+      });
+
+      // 直接发送二进制音频数据
+      res.send(audioBuffer);
+      
     } catch (error) {
       console.error("TTS转换失败:", error);
       res.status(500).json({
         code: 0,
         message: error instanceof Error ? error.message : "服务器内部错误",
-      } as TTSResponse);
+      });
     }
+  }
+
+  // 获取音频文件的MIME类型
+  private getMimeType(codec: string): string {
+    const mimeTypes: { [key: string]: string } = {
+      'wav': 'audio/wav',
+      'mp3': 'audio/mpeg',
+      'pcm': 'audio/pcm',
+    };
+    return mimeTypes[codec.toLowerCase()] || 'audio/wav';
   }
 
   // 获取支持的音色列表
