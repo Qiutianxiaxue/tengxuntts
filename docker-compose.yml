@@ -1,0 +1,42 @@
+services:
+  tts-api:
+    build: .
+    container_name: tencent-tts-api
+    ports:
+      - "35000:35000"
+    environment:
+      - NODE_ENV=production
+      - PORT=35000
+      - CACHE_ENABLED=true
+      - CACHE_DIR=/app/cache
+      - DEFAULT_VOICE_TYPE=301030
+      - DEFAULT_SAMPLE_RATE=16000
+      - DEFAULT_CODEC=wav
+      - TZ=Asia/Shanghai
+      # 腾讯云密钥 - 请在.env.docker文件中设置
+      - TENCENT_SECRET_ID=${TENCENT_SECRET_ID}
+      - TENCENT_SECRET_KEY=${TENCENT_SECRET_KEY}
+    env_file:
+      - .env.docker
+    volumes:
+      # 持久化缓存目录
+      - tts-cache:/app/cache
+      # 可选：挂载配置文件
+      # - ./config:/app/config:ro
+    restart: unless-stopped
+    networks:
+      - tts-network
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:35000/api/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+networks:
+  tts-network:
+    driver: bridge
+
+volumes:
+  tts-cache:
+    driver: local

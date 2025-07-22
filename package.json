@@ -8,7 +8,13 @@
     "start": "node dist/app.js",
     "dev": "ts-node src/app.ts",
     "watch": "nodemon --exec ts-node src/app.ts",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "docker:build": "docker build -t tencent-tts-api .",
+    "docker:run": "docker run -p 35000:35000 --env-file .env.docker tencent-tts-api",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f",
+    "docker:deploy": "docker-compose up -d --build"
   },
   "keywords": [
     "tts",
@@ -35,5 +41,6 @@
     "typescript": "^5.1.6",
     "ts-node": "^10.9.1",
     "nodemon": "^3.0.1"
-  }
+  },
+  "packageManager": "pnpm@10.13.1+sha512.37ebf1a5c7a30d5fabe0c5df44ee8da4c965ca0c5af3dbab28c3a1681b70a256218d05c81c9c0dcf767ef6b8551eb5b960042b9ed4300c59242336377e01cfad"
 }

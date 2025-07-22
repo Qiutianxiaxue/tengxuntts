@@ -5,7 +5,7 @@ dotenv.config();
 
 export const config = {
   server: {
-    port: parseInt(process.env.PORT || '3000'),
+    port: parseInt(process.env.PORT || '35000'),
     nodeEnv: process.env.NODE_ENV || 'development'
   },
   tencent: {

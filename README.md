@@ -30,7 +30,7 @@ TENCENT_SECRET_ID=your_secret_id_here
 TENCENT_SECRET_KEY=your_secret_key_here
 
 # 服务器配置
-PORT=3000
+PORT=35000
 NODE_ENV=development
 
 # 缓存配置
@@ -72,7 +72,7 @@ npm run watch
 
 ### 基础信息
 
-- **服务地址**: `http://localhost:3000`
+- **服务地址**: `http://localhost:35000`
 - **API前缀**: `/api`
 
 ### 接口列表
@@ -208,7 +208,7 @@ const axios = require('axios');
 
 async function textToSpeech(text) {
   try {
-    const response = await axios.post('http://localhost:3000/api/tts', {
+    const response = await axios.post('http://localhost:35000/api/tts', {
       text: text,
       voiceType: 0,
       sampleRate: 16000,
@@ -245,7 +245,7 @@ import requests
 import base64
 
 def text_to_speech(text):
-    url = 'http://localhost:3000/api/tts'
+    url = 'http://localhost:35000/api/tts'
     data = {
         'text': text,
         'voiceType': 0,
@@ -283,7 +283,7 @@ text_to_speech('你好，欢迎使用腾讯云TTS服务！')
 
 ```bash
 # POST 方式
-curl -X POST http://localhost:3000/api/tts \
+curl -X POST http://localhost:35000/api/tts \
   -H "Content-Type: application/json" \
   -d '{
     "text": "你好，欢迎使用腾讯云TTS服务！",
@@ -293,16 +293,16 @@ curl -X POST http://localhost:3000/api/tts \
   }'
 
 # GET 方式
-curl "http://localhost:3000/api/tts?text=你好世界&voiceType=0"
+curl "http://localhost:35000/api/tts?text=你好世界&voiceType=0"
 
 # 获取音色列表
-curl http://localhost:3000/api/voices
+curl http://localhost:35000/api/voices
 
 # 获取缓存信息
-curl http://localhost:3000/api/cache/info
+curl http://localhost:35000/api/cache/info
 
 # 清理缓存
-curl -X DELETE http://localhost:3000/api/cache
+curl -X DELETE http://localhost:35000/api/cache
 ```
 
 ## 项目结构
@@ -331,7 +331,7 @@ tengxuntts/
 
 - `TENCENT_SECRET_ID`: 腾讯云 SecretId
 - `TENCENT_SECRET_KEY`: 腾讯云 SecretKey
-- `PORT`: 服务端口，默认3000
+- `PORT`: 服务端口，默认35000
 - `NODE_ENV`: 运行环境，development/production
 - `CACHE_DIR`: 缓存目录路径
 - `CACHE_ENABLED`: 是否启用缓存，true/false

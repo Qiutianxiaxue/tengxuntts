@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { TTSController } from '../controllers/ttsController';
 
-const router = Router();
+const router: Router = Router();
 const ttsController = new TTSController();
 
 // TTS相关路由

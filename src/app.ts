@@ -1,10 +1,10 @@
-import express from 'express';
+import express, { Express } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import { config } from './config';
 import routes from './routes';
 
-const app = express();
+const app: Express = express();
 
 // 中间件配置
 app.use(helmet());
@@ -57,7 +57,7 @@ app.use('*', (req, res) => {
 });
 
 // 全局错误处理
-app.use((error: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
+app.use((error: Error, req: express.Request, res: express.Response, _next: express.NextFunction) => {
   console.error('服务器错误:', error);
   res.status(500).json({
     success: false,
