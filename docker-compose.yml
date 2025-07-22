@@ -17,7 +17,7 @@ services:
       - TENCENT_SECRET_ID=${TENCENT_SECRET_ID}
       - TENCENT_SECRET_KEY=${TENCENT_SECRET_KEY}
     env_file:
-      - .env.docker
+      - .env
     volumes:
       # 持久化缓存目录
       - tts-cache:/app/cache

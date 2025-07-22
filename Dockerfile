@@ -13,7 +13,7 @@ RUN pnpm config set registry https://registry.npmmirror.com
 
 # 复制package.json和pnpm-lock.yaml
 COPY package.json ./
-COPY .env.docker ./
+COPY .env ./
 
 # 安装依赖
 RUN pnpm install
