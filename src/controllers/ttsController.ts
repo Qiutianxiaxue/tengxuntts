@@ -51,6 +51,8 @@ export class TTSController {
       res.json({
         code: 1,
         data: {
+          voiceType,
+          sampleRate,
           audioBase64: result.audioData,
           cached: result.cached,
         },
@@ -109,7 +111,9 @@ export class TTSController {
         'Content-Length': audioBuffer.length.toString(),
         'Content-Disposition': `inline; filename="tts_audio.${codec}"`,
         'Cache-Control': 'public, max-age=3600', // 缓存1小时
-        'X-Cached': result.cached ? 'true' : 'false', // 标识是否来自缓存
+        'X-Voice-Type': voiceType,
+        'X-Sample-Rate': sampleRate,
+        'X-Cached': result.cached, // 标识是否来自缓存
       });
 
       // 直接发送二进制音频数据
