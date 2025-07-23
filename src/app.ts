@@ -31,15 +31,13 @@ app.get('/', (req, res) => {
       'POST /api/tts': '文本转语音（推荐）',
       'GET /api/tts?text=xxx': '文本转语音（GET方式）',
       'GET /api/voices': '获取支持的音色列表',
-      'GET /api/cache/info': '获取缓存信息',
-      'DELETE /api/cache': '清理缓存',
       'GET /api/health': '健康检查'
     },
     usage: {
       'POST /api/tts': {
         body: {
           text: '要转换的文本（必填）',
-          voiceType: '音色ID（可选，默认0）',
+          voiceType: '音色ID（可选，默认301023，支持：301023, 301030, 101040, 101019）',
           sampleRate: '采样率（可选，默认16000）',
           codec: '编码格式（可选，默认wav）'
         }

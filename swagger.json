@@ -165,7 +165,7 @@
                     "summary": "文本过长",
                     "value": {
                       "success": false,
-                      "error": "文本长度不能超过2000个字符"
+                      "error": "文本长度不能超过150个字符"
                     }
                   }
                 }
@@ -189,8 +189,8 @@
         }
       },
       "get": {
-        "summary": "文本转语音 (GET方式)",
-        "description": "通过GET方式进行文本转语音，适用于简单的调用场景",
+        "summary": "文本转语音 (GET方式) - 直接返回音频文件",
+        "description": "通过GET方式进行文本转语音，直接返回二进制音频数据，可以直接用于播放器播放。适用于前端直接播放音频的场景。",
         "tags": ["TTS"],
         "parameters": [
           {
@@ -200,7 +200,7 @@
             "description": "要转换的文本内容",
             "schema": {
               "type": "string",
-              "maxLength": 2000
+              "maxLength": 150
             },
             "example": "你好世界"
           },
@@ -242,12 +242,82 @@
         ],
         "responses": {
           "200": {
-            "description": "转换成功",
-            "content": {
-              "application/json": {
+            "description": "转换成功，返回二进制音频数据",
+            "headers": {
+              "Content-Type": {
+                "description": "音频文件的MIME类型",
                 "schema": {
-                  "$ref": "#/components/schemas/TTSResponse"
+                  "type": "string",
+                  "enum": ["audio/wav", "audio/mpeg", "audio/pcm"]
+                },
+                "example": "audio/wav"
+              },
+              "Content-Length": {
+                "description": "音频数据长度",
+                "schema": {
+                  "type": "integer"
                 }
+              },
+              "Content-Disposition": {
+                "description": "文件下载设置",
+                "schema": {
+                  "type": "string"
+                },
+                "example": "inline; filename=\"tts_audio.wav\""
+              },
+              "Cache-Control": {
+                "description": "缓存控制",
+                "schema": {
+                  "type": "string"
+                },
+                "example": "public, max-age=3600"
+              },
+              "X-Voice-Type": {
+                "description": "使用的音色ID",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Sample-Rate": {
+                "description": "音频采样率",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-EmotionCategory": {
+                "description": "情感类别",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Cached": {
+                "description": "是否来自缓存",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "audio/wav": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                },
+                "example": "二进制音频数据"
+              },
+              "audio/mpeg": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                },
+                "example": "二进制音频数据"
+              },
+              "audio/pcm": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                },
+                "example": "二进制音频数据"
               }
             }
           },
@@ -257,6 +327,22 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "empty_text": {
+                    "summary": "文本为空",
+                    "value": {
+                      "code": 0,
+                      "message": "文本内容不能为空"
+                    }
+                  },
+                  "text_too_long": {
+                    "summary": "文本过长",
+                    "value": {
+                      "code": 0,
+                      "message": "文本长度不能超过150个字符"
+                    }
+                  }
                 }
               }
             }
@@ -267,6 +353,10 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "code": 0,
+                  "message": "服务器内部错误"
                 }
               }
             }
@@ -465,6 +555,66 @@
           }
         }
       }
+    },
+    "/api/test-audio": {
+      "get": {
+        "summary": "测试音频接口",
+        "description": "返回预生成的测试音频文件，用于测试音频流传输功能，不调用TTS服务",
+        "tags": ["TTS"],
+        "responses": {
+          "200": {
+            "description": "成功返回测试音频数据",
+            "headers": {
+              "Content-Type": {
+                "description": "音频文件的MIME类型",
+                "schema": {
+                  "type": "string"
+                },
+                "example": "audio/wav"
+              },
+              "Content-Length": {
+                "description": "音频数据长度",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "Content-Disposition": {
+                "description": "文件下载设置",
+                "schema": {
+                  "type": "string"
+                },
+                "example": "inline; filename=\"test_audio.wav\""
+              },
+              "Connection": {
+                "description": "连接控制",
+                "schema": {
+                  "type": "string"
+                },
+                "example": "close"
+              }
+            },
+            "content": {
+              "audio/wav": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                },
+                "example": "二进制测试音频数据"
+              }
+            }
+          },
+          "500": {
+            "description": "服务器内部错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -476,7 +626,7 @@
           "text": {
             "type": "string",
             "description": "要转换的文本内容",
-            "maxLength": 2000,
+            "maxLength": 150,
             "minLength": 1,
             "example": "你好，欢迎使用腾讯云TTS服务！"
           },
