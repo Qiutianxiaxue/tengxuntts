@@ -134,7 +134,7 @@ export class TTSController {
   private getMimeType(codec: string): string {
     const mimeTypes: { [key: string]: string } = {
       'wav': 'audio/wav',
-      'mp3': 'audio/mpeg',
+      'mp3': 'audio/mp3',
       'pcm': 'audio/pcm',
     };
     return mimeTypes[codec.toLowerCase()] || 'audio/wav';
