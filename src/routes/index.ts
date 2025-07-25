@@ -8,6 +8,9 @@ const ttsController = new TTSController();
 router.post('/tts', ttsController.textToSpeech.bind(ttsController));
 router.get('/tts', ttsController.textToSpeechGet.bind(ttsController));
 
+// 缓存音频文件访问
+router.get('/cache/:filename', ttsController.getCachedAudio.bind(ttsController));
+
 // 音色列表
 router.get('/voices', ttsController.getVoices.bind(ttsController));
 

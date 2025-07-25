@@ -8,15 +8,11 @@ export interface TTSRequest {
 export interface TTSResponse {
   code: number;
   data?: {
+    voiceType?: number;
+    sampleRate?: number;
     audioUrl?: string;
     audioBase64?: string;
     cached: boolean;
   };
   message?: string;
-}
-
-export interface CacheItem {
-  audioData: string;
-  createdAt: Date;
-  hash: string;
 }

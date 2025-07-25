@@ -24,19 +24,37 @@ export class TTSService {
     sampleRate: number = config.tts.defaultSampleRate,
     codec: string = config.tts.defaultCodec,
     EmotionCategory?: string
-  ): Promise<{ audioData: string; voiceType: number; sampleRate: number; codec: string; EmotionCategory: string; cached: boolean }> {
+  ): Promise<{
+    audioData: string;
+    audioUrl?: string;
+    voiceType: number;
+    sampleRate: number;
+    codec: string;
+    EmotionCategory: string;
+    cached: boolean;
+  }> {
     try {
       const EmotionCategoryText = EmotionCategory || "neutral";
       // 首先检查缓存
-      const cachedAudio = await this.cacheManager.get(
+      const cachedFileName = await this.cacheManager.get(
         text,
         voiceType,
         sampleRate,
-        codec + EmotionCategoryText
+        codec,
+        EmotionCategoryText
       );
-      if (cachedAudio) {
+      if (cachedFileName) {
         console.log("使用缓存音频");
-        return { audioData: cachedAudio, voiceType, sampleRate, codec, EmotionCategory: EmotionCategoryText, cached: true };
+        const audioUrl = process.env.URL_TTS + `/api/cache/${cachedFileName}`;
+        return {
+          audioData: "", // 缓存时不返回base64数据
+          audioUrl,
+          voiceType,
+          sampleRate,
+          codec,
+          EmotionCategory: EmotionCategoryText,
+          cached: true,
+        };
       }
 
       // 如果没有缓存，则调用腾讯云TTS
@@ -58,17 +76,30 @@ export class TTSService {
 
       const audioData = response.Audio;
 
-      // 保存到缓存
-      await this.cacheManager.set(
+      // 保存到缓存并获取文件名
+      const cacheFileName = await this.cacheManager.set(
         text,
         voiceType,
         sampleRate,
         codec,
+        EmotionCategoryText,
         audioData
       );
 
+      const audioUrl = cacheFileName
+        ? process.env.URL_TTS + `/api/cache/${cacheFileName}`
+        : undefined;
+
       console.log("TTS转换完成并已缓存");
-      return { audioData, voiceType, sampleRate, codec, EmotionCategory: EmotionCategoryText, cached: false };
+      return {
+        audioData,
+        audioUrl,
+        voiceType,
+        sampleRate,
+        codec,
+        EmotionCategory: EmotionCategoryText,
+        cached: false,
+      };
     } catch (error) {
       console.error("TTS服务错误:", error);
       throw error;
@@ -85,6 +116,11 @@ export class TTSService {
 
   async clearCache() {
     return await this.cacheManager.clear();
+  }
+
+  // 获取缓存的音频文件路径
+  getCachedAudioPath(filename: string): string {
+    return this.cacheManager.getAudioFilePath(filename);
   }
 
   // 获取支持的音色列表

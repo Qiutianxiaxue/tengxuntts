@@ -45,7 +45,8 @@ export class TTSController {
         text.trim(),
         voiceType,
         sampleRate,
-        codec
+        codec,
+        "neutral"
       );
 
       res.json({
@@ -53,7 +54,7 @@ export class TTSController {
         data: {
           voiceType,
           sampleRate,
-          audioBase64: result.audioData,
+          audioUrl: result.audioUrl,
           cached: result.cached,
         },
       } as TTSResponse);
@@ -76,7 +77,7 @@ export class TTSController {
       const sampleRate = req.query.sampleRate
         ? parseInt(req.query.sampleRate as string)
         : undefined;
-      const codec = req.query.codec as string || 'wav';
+      const codec = (req.query.codec as string) || "wav";
 
       if (!text || typeof text !== "string" || text.trim() === "") {
         res.status(400).json({
@@ -99,28 +100,55 @@ export class TTSController {
         voiceType,
         sampleRate,
         codec,
-        'neutral'
+        "neutral"
       );
+      console.log("TTS转换结果:", result.cached);
 
-      // 将Base64转换为二进制数据
-      const audioBuffer = Buffer.from(result.audioData, 'base64');
-      
+      let audioBuffer: Buffer;
+
+      if (result.cached && result.audioUrl) {
+        // 如果是缓存文件，从文件系统读取
+        const filename = result.audioUrl.split('/').pop();
+        if (filename) {
+          const filePath = this.ttsService.getCachedAudioPath(filename);
+          audioBuffer = require('fs').readFileSync(filePath);
+        } else {
+          throw new Error("无效的缓存文件路径");
+        }
+      } else {
+        // 如果是新生成的，从base64转换
+        audioBuffer = Buffer.from(result.audioData, "base64");
+      }
+
+      // 验证音频数据
+      if (audioBuffer.length === 0) {
+        throw new Error("音频数据为空");
+      }
+
+      // 检查MP3文件头（如果是MP3格式）
+      if (codec.toLowerCase() === "mp3") {
+        const mp3Header = audioBuffer.slice(0, 3);
+        if (!this.isValidMp3Header(mp3Header)) {
+          console.warn("警告: MP3文件头验证失败，可能影响播放");
+        }
+      }
+
       // 设置响应头
       const mimeType = this.getMimeType(codec);
       res.set({
-        'Content-Type': mimeType,
-        'Content-Length': audioBuffer.length.toString(),
-        'Content-Disposition': `attachment; filename="tts_audio.${codec}"`,
-        'Cache-Control': 'public, max-age=3600', // 缓存1小时
-        'X-Voice-Type': result.voiceType,
-        'X-Sample-Rate': result.sampleRate,
-        'X-EmotionCategory': result.EmotionCategory,
-        'X-Cached': result.cached, // 标识是否来自缓存
+        "Content-Type": mimeType,
+        "Content-Length": audioBuffer.length.toString(),
+        "Content-Disposition": `attachment; filename="tts_audio_${Date.now()}.${codec}"`,
+        "Cache-Control": "public, max-age=360000", // 缓存1小时
+        "Accept-Ranges": "bytes",
+        "X-Voice-Type": result.voiceType?.toString() || "",
+        "X-Sample-Rate": result.sampleRate?.toString() || "",
+        "X-EmotionCategory": result.EmotionCategory || "",
+        "X-Cached": result.cached?.toString() || "false", // 标识是否来自缓存
       });
 
       // 直接发送二进制音频数据
       res.send(audioBuffer);
-      
     } catch (error) {
       console.error("TTS转换失败:", error);
       res.status(500).json({
@@ -133,11 +161,18 @@ export class TTSController {
   // 获取音频文件的MIME类型
   private getMimeType(codec: string): string {
     const mimeTypes: { [key: string]: string } = {
-      'wav': 'audio/wav',
-      'mp3': 'audio/mp3',
-      'pcm': 'audio/pcm',
+      wav: "audio/wav",
+      mp3: "audio/mp3",
+      pcm: "audio/pcm",
     };
-    return mimeTypes[codec.toLowerCase()] || 'audio/wav';
+    return mimeTypes[codec.toLowerCase()] || "audio/wav";
+  }
+
+  // 验证MP3文件头
+  private isValidMp3Header(header: Buffer): boolean {
+    if (header.length < 3) return false;
+    // 检查MP3同步字节 (0xFF, 0xFB/0xFA/0xF3/0xF2)
+    return header[0] === 0xff && (header[1] & 0xe0) === 0xe0;
   }
 
   // 获取支持的音色列表
@@ -201,5 +236,59 @@ export class TTSController {
         version: "1.0.0",
       },
     });
+  }
+
+  // 获取缓存的音频文件
+  async getCachedAudio(req: Request, res: Response): Promise<void> {
+    try {
+      const filename = req.params.filename;
+      
+      if (!filename) {
+        res.status(400).json({
+          code: 0,
+          message: "文件名不能为空",
+        });
+        return;
+      }
+
+      // 验证文件名格式（防止路径遍历攻击）
+      if (!/^[a-f0-9]{32}\.(mp3|wav|pcm)$/i.test(filename)) {
+        res.status(400).json({
+          code: 0,
+          message: "无效的文件名格式",
+        });
+        return;
+      }
+
+      const filePath = this.ttsService.getCachedAudioPath(filename);
+      
+      if (!require('fs').existsSync(filePath)) {
+        res.status(404).json({
+          code: 0,
+          message: "音频文件不存在",
+        });
+        return;
+      }
+
+      // 获取文件扩展名来确定MIME类型
+      const ext = filename.split('.').pop()?.toLowerCase();
+      const mimeType = this.getMimeType(ext || 'wav');
+      
+      // 设置响应头
+      res.set({
+        'Content-Type': mimeType,
+        'Cache-Control': 'public, max-age=86400', // 缓存24小时
+        'Accept-Ranges': 'bytes',
+      });
+
+      // 发送文件
+      res.sendFile(filePath);
+    } catch (error) {
+      console.error('获取缓存音频失败:', error);
+      res.status(500).json({
+        code: 0,
+        message: error instanceof Error ? error.message : "服务器内部错误",
+      });
+    }
   }
 }

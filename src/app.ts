@@ -30,7 +30,10 @@ app.get('/', (req, res) => {
     endpoints: {
       'POST /api/tts': '文本转语音（推荐）',
       'GET /api/tts?text=xxx': '文本转语音（GET方式）',
+      'GET /api/cache/:filename': '获取缓存的音频文件',
       'GET /api/voices': '获取支持的音色列表',
+      'GET /api/cache/info': '获取缓存信息',
+      'DELETE /api/cache': '清理缓存',
       'GET /api/health': '健康检查'
     },
     usage: {

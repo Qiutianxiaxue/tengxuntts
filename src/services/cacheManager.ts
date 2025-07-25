@@ -2,7 +2,6 @@ import fs from 'fs-extra';
 import path from 'path';
 import crypto from 'crypto';
 import { config } from '../config';
-import { CacheItem } from '../types';
 
 export class CacheManager {
   private cacheDir: string;
@@ -18,54 +17,56 @@ export class CacheManager {
     }
   }
 
-  private generateHash(text: string, voiceType: number, sampleRate: number, codec: string): string {
-    const data = `${text}_${voiceType}_${sampleRate}_${codec}`;
+  private generateHash(text: string, voiceType: number, sampleRate: number, codec: string, EmotionCategory: string): string {
+    const data = `${text}_${voiceType}_${sampleRate}_${codec}_${EmotionCategory}`;
     return crypto.createHash('md5').update(data).digest('hex');
   }
 
-  private getCacheFilePath(hash: string): string {
-    return path.join(this.cacheDir, `${hash}.json`);
+  private getCacheFilePath(hash: string, codec: string): string {
+    return path.join(this.cacheDir, `${hash}.${codec}`);
   }
 
-  async get(text: string, voiceType: number, sampleRate: number, codec: string): Promise<string | null> {
+  async get(text: string, voiceType: number, sampleRate: number, codec: string, EmotionCategory: string): Promise<string | null> {
     if (!config.cache.enabled) {
       return null;
     }
 
     try {
-      const hash = this.generateHash(text, voiceType, sampleRate, codec);
-      const cacheFilePath = this.getCacheFilePath(hash);
+      const hash = this.generateHash(text, voiceType, sampleRate, codec, EmotionCategory);
+      console.log(`尝试从缓存中获取音频: ${hash}`);
+      const cacheFilePath = this.getCacheFilePath(hash, codec);
+      console.log(`cacheFilePath: ${cacheFilePath}`);
 
       if (!fs.existsSync(cacheFilePath)) {
         return null;
       }
 
-      const cacheItem: CacheItem = await fs.readJson(cacheFilePath);
-      return cacheItem.audioData;
+      // 返回相对于cache目录的文件路径，用于生成URL
+      return `${hash}.${codec}`;
     } catch (error) {
       console.error('读取缓存失败:', error);
       return null;
     }
   }
 
-  async set(text: string, voiceType: number, sampleRate: number, codec: string, audioData: string): Promise<void> {
+  async set(text: string, voiceType: number, sampleRate: number, codec: string, EmotionCategory: string, audioData: string): Promise<string> {
     if (!config.cache.enabled) {
-      return;
+      return '';
     }
 
     try {
-      const hash = this.generateHash(text, voiceType, sampleRate, codec);
-      const cacheFilePath = this.getCacheFilePath(hash);
+      const hash = this.generateHash(text, voiceType, sampleRate, codec, EmotionCategory);
+      const cacheFilePath = this.getCacheFilePath(hash, codec);
 
-      const cacheItem: CacheItem = {
-        audioData,
-        createdAt: new Date(),
-        hash
-      };
-
-      await fs.writeJson(cacheFilePath, cacheItem);
+      // 将base64音频数据直接写入文件
+      const audioBuffer = Buffer.from(audioData, 'base64');
+      await fs.writeFile(cacheFilePath, audioBuffer);
+      
+      console.log(`音频文件已缓存: ${cacheFilePath}`);
+      return `${hash}.${codec}`;
     } catch (error) {
       console.error('写入缓存失败:', error);
+      return '';
     }
   }
 
@@ -81,10 +82,13 @@ export class CacheManager {
   async getCacheInfo(): Promise<{ count: number; size: string }> {
     try {
       const files = await fs.readdir(this.cacheDir);
-      const jsonFiles = files.filter(file => file.endsWith('.json'));
+      // 排除JSON文件，只统计音频文件
+      const audioFiles = files.filter(file => 
+        file.endsWith('.mp3') || file.endsWith('.wav') || file.endsWith('.pcm')
+      );
       
       let totalSize = 0;
-      for (const file of jsonFiles) {
+      for (const file of audioFiles) {
         const filePath = path.join(this.cacheDir, file);
         const stats = await fs.stat(filePath);
         totalSize += stats.size;
@@ -93,12 +97,17 @@ export class CacheManager {
       const sizeInMB = (totalSize / (1024 * 1024)).toFixed(2);
       
       return {
-        count: jsonFiles.length,
+        count: audioFiles.length,
         size: `${sizeInMB} MB`
       };
     } catch (error) {
       console.error('获取缓存信息失败:', error);
       return { count: 0, size: '0 MB' };
     }
+  }
+
+  // 获取音频文件的完整路径
+  getAudioFilePath(filename: string): string {
+    return path.join(this.cacheDir, filename);
   }
 }
