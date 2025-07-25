@@ -110,7 +110,7 @@ export class TTSController {
       res.set({
         'Content-Type': mimeType,
         'Content-Length': audioBuffer.length.toString(),
-        'Content-Disposition': `inline; filename="tts_audio.${codec}"`,
+        'Content-Disposition': `attachment; filename="tts_audio.${codec}"`,
         'Cache-Control': 'public, max-age=3600', // 缓存1小时
         'X-Voice-Type': result.voiceType,
         'X-Sample-Rate': result.sampleRate,
